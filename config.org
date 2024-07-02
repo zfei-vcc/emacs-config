@@ -139,7 +139,7 @@ If you like using any of those, change =-1= to =1=.
 #+BEGIN_SRC emacs-lisp
   (defun config-visit ()
     (interactive)
-    (find-file "~/.emacs.d/config.org" ))
+    (find-file "~/.emacs.d/emacs-config/config.org" ))
   (global-set-key (kbd "C-c e") 'config-visit)
   #+END_SRC
 
@@ -147,7 +147,7 @@ If you like using any of those, change =-1= to =1=.
 #+BEGIN_SRC emacs-lisp
   (defun config-reload ()
     (interactive)
-    (org-babel-load-file (expand-file-name "~/.emacs.d/config.org")))
+    (org-babel-load-file (expand-file-name "~/.emacs.d/emacs-config/config.org")))
   (global-set-key (kbd "C-c r") 'config-reload)
 #+END_SRC
 
