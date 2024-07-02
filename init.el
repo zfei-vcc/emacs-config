@@ -13,5 +13,12 @@
 (unless package-archive-contents
   (package-refresh-contents))
 
-(when (file-readable-p "~/.emacs.d/config.org")
-  (org-babel-load-file (expand-file-name "~/.emacs.d/config.org")))
+;; Set the path to the config.org file
+(setq config-org-file (expand-file-name "config.org" "~/.emacs.d/emacs-config/"))
+
+;; Load Org mode
+(require 'org)
+
+;; Load the config.org file
+(when (file-readable-p config-org-file)
+  (org-babel-load-file config-org-file))
