@@ -1,0 +1,492 @@
+#+TITLE: Emacs configuration
+#+STARTUP: overview
+#+CREATOR: Zhennan Fei
+#+LANGUAGE: en
+* Theme
+#+BEGIN_SRC emacs-lisp
+  (use-package ef-themes
+    :ensure t
+    :init
+    (load-theme 'ef-trio-light t)
+    :config
+    (setq ef-themes-to-toggle '(ef-trio-dark ef-trio-light))
+    (global-set-key (kbd "<f5>") 'ef-themes-toggle))
+#+END_SRC
+
+* Basic Interface Settings
+** Looks
+*** Remove lame startup screen
+#+BEGIN_SRC emacs-lisp
+  (setq inhibit-startup-message t)
+#+END_SRC
+
+*** Disable menus and scrollbars
+If you like using any of those, change =-1= to =1=.
+#+BEGIN_SRC emacs-lisp
+  (tool-bar-mode -1)
+  (menu-bar-mode -1)
+  (when window-system (scroll-bar-mode))
+#+END_SRC
+
+*** Change the font
+#+BEGIN_SRC emacs-lisp
+  (when window-system
+    (add-to-list 'default-frame-alist '(font . "JetBrains Mono-14")))
+#+END_SRC
+
+*** Leave some margin on edge
+#+BEGIN_SRC emacs-lisp
+  (when window-system (set-fringe-mode 5))
+#+END_SRC
+
+*** Disable bell
+#+BEGIN_SRC emacs-lisp
+  (setq ring-bell-function 'ignore)
+#+END_SRC
+
+*** Highlight current line
+#+BEGIN_SRC emacs-lisp
+  (when window-system (add-hook 'prog-mode-hook 'hl-line-mode))
+#+END_SRC
+
+*** Display line number
+#+BEGIN_SRC emacs-lisp
+  (global-display-line-numbers-mode 1)
+#+END_SRC
+
+** Functionality
+*** Disable backups and auto-saves
+#+BEGIN_SRC emacs-lisp
+  (setq make-backup-files nil)
+  (setq auto-save-default nil)
+#+END_SRC
+
+*** Change yes-or-no questions into y-or-n questions
+#+BEGIN_SRC emacs-lisp
+(defalias 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+
+*** Keep the right Option key
+#+BEGIN_SRC emacs-lisp
+  (setq mac-right-option-modifier nil)
+#+END_SRC
+
+* Text manipulation
+** Improved kill-word
+#+BEGIN_SRC emacs-lisp
+  (defun kill-whole-word ()
+    (interactive)
+    (backward-word)
+    (kill-word 1))
+  (global-set-key (kbd "C-c w w") 'kill-whole-word)
+#+END_SRC
+
+** Copying the whole line
+#+BEGIN_SRC emacs-lisp
+  (defun copy-whole-line ()
+    (interactive)
+    (save-excursion
+      (kill-new
+       (buffer-substring
+	(point-at-bol)
+	(point-at-eol)))))
+  (global-set-key (kbd "C-c w l") 'copy-whole-line)
+#+END_SRC
+
+** Kill ring
+#+BEGIN_SRC emacs-lisp
+  (use-package popup-kill-ring
+    :ensure t
+    :bind ("M-y" . popup-kill-ring))
+#+END_SRC
+
+* Spell checking
+** flyspell
+#+BEGIN_SRC emacs-lisp
+  (use-package flyspell
+    :ensure t
+    :diminish
+    :hook ((text-mode . flyspell-mode)
+           (prog-mode . flyspell-prog-mode))
+    :config
+    (setq ispell-program-name "aspell") ;; Use Aspell as the default spell checker
+    (setq ispell-extra-args '("--sug-mode=ultra" "--lang=en_US")))
+#+END_SRC
+
+** flyspell-correct
+#+BEGIN_SRC emacs-lisp
+  (use-package flyspell-correct
+    :ensure t
+    :bind (:map flyspell-mode-map
+                ("C-;" . flyspell-correct-wrapper)))
+
+  ;; Optional: Use flyspell-correct-ivy for better correction interface
+  (use-package flyspell-correct-ivy
+    :ensure t
+    :after flyspell-correct
+    :config
+    (setq flyspell-correct-interface 'flyspell-correct-ivy))
+#+END_SRC
+
+* Minor conveniences
+** Showing lines and columns on the modeline
+#+BEGIN_SRC emacs-lisp
+  (line-number-mode 1)
+  (column-number-mode 1)
+#+END_SRC
+
+** Visiting the configuration
+#+BEGIN_SRC emacs-lisp
+  (defun config-visit ()
+    (interactive)
+    (find-file "~/.emacs.d/config.org" ))
+  (global-set-key (kbd "C-c e") 'config-visit)
+  #+END_SRC
+
+** Reloading the configuration
+#+BEGIN_SRC emacs-lisp
+  (defun config-reload ()
+    (interactive)
+    (org-babel-load-file (expand-file-name "~/.emacs.d/config.org")))
+  (global-set-key (kbd "C-c r") 'config-reload)
+#+END_SRC
+
+** Beacon
+#+BEGIN_SRC emacs-lisp
+  (use-package beacon
+    :ensure t
+    :diminish
+    :config
+      (beacon-mode 1))
+#+END_SRC
+
+** Show parens
+#+BEGIN_SRC emacs-lisp
+  (show-paren-mode 1)
+#+END_SRC
+
+** Electric
+#+BEGIN_SRC emacs-lisp
+  (setq electric-pair-pairs '(
+                         (?\{ . ?\})
+                         (?\( . ?\))
+                         (?\[ . ?\])
+                         (?\" . ?\")
+                         ))
+  (electric-pair-mode t)
+#+END_SRC
+
+** Rainbow delimiters
+#+BEGIN_SRC emacs-lisp
+  (use-package rainbow-delimiters
+    :ensure t
+    :diminish
+    :hook ((prog-mode . rainbow-delimiters-mode)))
+#+END_SRC
+
+* Org
+** Basic org
+#+BEGIN_SRC emacs-lisp
+  (use-package org
+    :ensure t
+    :hook ((org-mode . org-indent-mode)
+           (org-mode . visual-line-mode))
+    :config
+    (setq org-startup-indented t
+          org-indent-indentation-per-level 2
+          org-log-done 'time) ;; Adjust indentation level
+    ;; Custom templates
+    (setq org-structure-template-alist
+          '(("s" . "src")
+            ("e" . "example")
+            ("q" . "quote")
+            ("v" . "verse")
+            ("c" . "center")
+            ("l" . "latex")
+            ("h" . "html")
+            ("a" . "ascii")
+            ("i" . "index")
+            ("I" . "include")
+            ("el" . "src emacs-lisp")
+            ("py" . "src python")
+            ("sh" . "src shell")))
+    (setq org-latex-create-formula-image-program 'dvisvgm)
+    (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.45)))
+#+END_SRC
+
+** Org Bullets
+#+BEGIN_SRC emacs-lisp
+  (use-package org-bullets
+    :ensure t
+    :config
+    (add-hook 'org-mode-hook (lambda () (org-bullets-mode))))
+#+END_SRC
+
+* Buffers
+** Always kill the current buffer
+#+BEGIN_SRC emacs-lisp
+  (defun kill-curr-buffer ()
+    (interactive)
+    (kill-buffer (current-buffer)))
+  (global-set-key (kbd "C-x k") 'kill-curr-buffer)
+#+END_SRC
+
+** Enable ibuffer
+#+BEGIN_SRC emacs-lisp
+  (global-set-key (kbd "C-x C-b") 'ibuffer)
+#+END_SRC
+
+** Jump to word
+#+BEGIN_SRC emacs-lisp
+  (use-package avy
+    :ensure t
+    :bind
+    ("M-s" . avy-goto-char))
+#+END_SRC
+
+* Moving around
+** which-key
+#+BEGIN_SRC emacs-lisp
+  (use-package which-key
+    :ensure t
+    :diminish
+    :config
+      (which-key-mode))
+#+END_SRC
+
+** windows
+*** switch-widow
+#+BEGIN_SRC emacs-lisp
+(use-package switch-window
+  :ensure t
+  :config
+    (setq switch-window-input-style 'minibuffer)
+    (setq switch-window-increase 4)
+    (setq switch-window-threshold 2)
+    (setq switch-window-shortcut-style 'qwerty)
+    (setq switch-window-qwerty-shortcuts
+        '("a" "s" "d" "f" "j" "k" "l" "i" "o"))
+  :bind
+    ([remap other-window] . switch-window))
+#+END_SRC
+
+*** Following window splits
+#+BEGIN_SRC emacs-lisp
+  (defun split-and-follow-horizontally ()
+    (interactive)
+    (split-window-below)
+    (balance-windows)
+    (other-window 1))
+  (global-set-key (kbd "C-x 2") 'split-and-follow-horizontally)
+
+  (defun split-and-follow-vertically ()
+    (interactive)
+    (split-window-right)
+    (balance-windows)
+    (other-window 1))
+  (global-set-key (kbd "C-x 3") 'split-and-follow-vertically)
+#+END_SRC
+
+** ivy+counsel+swiper
+#+BEGIN_SRC emacs-lisp
+  (use-package ivy
+    :ensure t
+    :diminish ivy-mode
+    :init
+    (ivy-mode 1)
+    :config
+    (setq ivy-use-virtual-buffers t
+          ivy-count-format "(%d/%d) "
+          ivy-wrap t))
+
+  (use-package ivy-rich
+    :ensure t
+    :init
+    (ivy-rich-mode))
+
+  (use-package counsel
+    :ensure t
+    :bind (("M-x" . counsel-M-x)
+           ("C-x C-f" . counsel-find-file)
+           ("C-x b" . counsel-switch-buffer)
+           ("C-c k" . counsel-rg)
+           :map minibuffer-local-map
+           ("C-r" . counsel-minibuffer-history)))
+
+  (use-package swiper
+    :ensure t
+    :bind (("C-s" . swiper)
+           ("C-r" . swiper)))
+#+END_SRC
+
+* Dashboard
+#+BEGIN_SRC emacs-lisp
+  (use-package dashboard
+    :if (display-graphic-p)
+    :ensure t
+    :config
+      (dashboard-setup-startup-hook)
+      (setq dashboard-items '((recents  . 5)
+			      (projects . 5)))
+      (setq dashboard-banner-logo-title "Someday is today")
+      (setq dashboard-banner-startup-message ""))
+#+END_SRC
+
+* Modeline
+** Clock
+*** Time format
+#+BEGIN_SRC emacs-lisp
+  (setq display-time-24hr-format t)
+  (setq display-time-format "%H:%M - %d %B %Y")
+#+END_SRC
+
+*** Enabling the mode
+This turns on the clock globally.
+#+BEGIN_SRC emacs-lisp
+  (display-time-mode 1)
+#+END_SRC
+
+** diminish
+#+BEGIN_SRC emacs-lisp
+  (use-package diminish
+    :ensure t
+    :init
+    (diminish 'display-line-numbers-mode)
+    (diminish 'org-indent-mode)
+    (diminish 'visual-line-mode)
+    (diminish 'eldoc-mode))
+#+END_SRC
+
+** indicator
+#+BEGIN_SRC emacs-lisp
+  (use-package nyan-mode
+    :ensure t
+    :init
+    (nyan-mode))
+#+END_SRC
+
+* Auto completion
+** company
+#+BEGIN_SRC emacs-lisp
+  (use-package company
+    :ensure t
+    :diminish
+    :init
+    (add-hook 'after-init-hook 'global-company-mode)
+    :config
+    (setq company-idle-delay 0)
+    (setq company-minimum-prefix-length 1))
+#+END_SRC
+
+* File explorer
+** neotree
+#+BEGIN_SRC emacs-lisp
+  (use-package all-the-icons
+    :ensure t
+    :config
+    ;; Install fonts if necessary
+    (unless (member "all-the-icons" (font-family-list))
+      (all-the-icons-install-fonts t)))
+
+  ;; Use-package configuration for neotree
+  (use-package neotree
+    :ensure t
+    :bind ([f8] . neotree-toggle)
+    :config
+    ;; Enable icons in Neotree
+    (setq neo-theme (if (display-graphic-p) 'icons 'arrow)) ;; Use icons if in GUI mode
+    (setq neo-smart-open t) ;; Automatically find the current file and open the tree accordingly
+    (setq neo-window-fixed-size nil) ;; Make the neotree window resizable
+    (setq neo-window-width 35)) ;; Set the initial width of the neotree window
+#+END_SRC
+
+* Dire
+** icons
+#+BEGIN_SRC emacs-lisp
+  (use-package dired
+    :config
+    (use-package treemacs-icons-dired
+      :if (display-graphic-p)
+      :ensure t
+      :config (treemacs-icons-dired-mode)))
+#+END_SRC
+** hide details
+#+BEGIN_SRC emacs-lisp
+  (add-hook 'dired-mode-hook #'dired-hide-details-mode)
+  (add-hook 'dired-mode-hook 'dired-omit-mode)
+#+END_SRC
+
+* Denote
+#+begin_src emacs-lisp
+  (use-package denote
+    :ensure t
+    :config
+    (setq denote-directory (expand-file-name "~/Documents/MyNotes/")
+          denote-known-keywords '("emacs" "personal" "scenario" "validation")
+          ;; defaults to org file type
+          denote-file-type nil)
+    :hook (dired-mode . denote-dired-mode))
+#+end_src
+
+* Latex
+#+BEGIN_SRC emacs-lisp
+  (use-package tex
+    :ensure auctex
+    :defer t
+    :hook ((LaTeX-mode . visual-line-mode)
+           (LaTeX-mode . LaTeX-math-mode)
+           (LaTeX-mode . turn-on-reftex)
+           (LaTeX-mode . flyspell-mode))
+    :config
+    (setq TeX-auto-save t)
+    (setq TeX-parse-self t)
+    (setq-default TeX-master nil)
+    ;; Use PDF mode by default
+    (setq TeX-PDF-mode t)
+    ;; Set default viewer for MacOS
+    (when (eq system-type 'darwin)
+      (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
+      (setq TeX-view-program-list '(("PDF Viewer" "/usr/bin/open -a Preview.app %o")))))
+#+END_SRC
+
+* Python development
+** Virtual environment
+#+BEGIN_SRC emacs-lisp
+  (use-package pyvenv
+    :ensure t
+    :config
+    (pyvenv-mode t))
+#+END_SRC
+
+** tree-sitter
+#+BEGIN_SRC emacs-lisp
+  (use-package python
+    :ensure t
+    :bind (:map python-ts-mode-map
+                ("<f6>" . eglot-format))
+    :hook ((python-ts-mode . eglot-ensure)
+           (python-ts-mode . company-mode))
+    :mode (("\\.py\\'" . python-ts-mode)))
+#+END_SRC
+
+** eglot
+#+BEGIN_SRC emacs-lisp
+  (use-package eglot
+    :bind (:map eglot-mode-map
+            ("C-c d" . eldoc)
+            ("C-c a" . eglot-code-actions)
+            ("C-c f" . flymake-show-buffer-diagnostics)
+            ("C-c r" . eglot-rename)))
+  (setq eldoc-echo-area-use-multiline-p nil)
+#+END_SRC
+
+** Highlight indent
+#+BEGIN_SRC emacs-lisp
+  (use-package highlight-indent-guides
+    :ensure t
+    :diminish
+    :hook (python-ts-mode . highlight-indent-guides-mode)
+    :config
+    (set-face-foreground 'highlight-indent-guides-character-face "dimgray")
+    (setq highlight-indent-guides-method 'character))
+#+END_SRC
