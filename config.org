@@ -12,6 +12,7 @@ Clone the repository to =~.emacs.d/emacs-config= and put the following elisp cod
 #+END_QUOTE
 
 * Theme
+[[eww:https://github.com/protesilaos/ef-themes][ef-themes]] are a collection of beautiful light and dark themes. =ef-trio-dark= and =ef-trio-light= (default) are my favorite and they can be toggled.  
 #+BEGIN_SRC emacs-lisp
   (use-package ef-themes
     :ensure t
@@ -24,12 +25,12 @@ Clone the repository to =~.emacs.d/emacs-config= and put the following elisp cod
 
 * Basic Interface Settings
 ** Looks
-*** Remove lame startup screen
+*** Remove startup screen
 #+BEGIN_SRC emacs-lisp
   (setq inhibit-startup-message t)
 #+END_SRC
 
-*** Disable menus and scrollbars
+*** Disable menus and scroll-bars
 If you like using any of those, change =-1= to =1=.
 #+BEGIN_SRC emacs-lisp
   (tool-bar-mode -1)
@@ -37,7 +38,7 @@ If you like using any of those, change =-1= to =1=.
   (when window-system (scroll-bar-mode))
 #+END_SRC
 
-*** Change the font
+*** Change the font 
 #+BEGIN_SRC emacs-lisp
   (when (and window-system (eq system-type 'darwin))
     (add-to-list 'default-frame-alist '(font . "JetBrains Mono-14")))
@@ -54,6 +55,7 @@ If you like using any of those, change =-1= to =1=.
 #+END_SRC
 
 *** Highlight current line
+Only enabled in programming mode.
 #+BEGIN_SRC emacs-lisp
   (when window-system (add-hook 'prog-mode-hook 'hl-line-mode))
 #+END_SRC
@@ -75,9 +77,10 @@ If you like using any of those, change =-1= to =1=.
 (defalias 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
 
-*** Keep the right Option key
+*** Keep the right Option key on Mac
 #+BEGIN_SRC emacs-lisp
-  (setq mac-right-option-modifier nil)
+  (when (eq system-type 'darwin)
+    (setq mac-right-option-modifier nil))
 #+END_SRC
 
 * Text manipulation
@@ -110,7 +113,7 @@ If you like using any of those, change =-1= to =1=.
 #+END_SRC
 
 * Spell checking
-** flyspell
+** Spelling check for English
 #+BEGIN_SRC emacs-lisp
   (use-package flyspell
     :ensure t
@@ -122,7 +125,7 @@ If you like using any of those, change =-1= to =1=.
     (setq ispell-extra-args '("--sug-mode=ultra" "--lang=en_US")))
 #+END_SRC
 
-** flyspell-correct
+** Correction
 #+BEGIN_SRC emacs-lisp
   (use-package flyspell-correct
     :ensure t
@@ -138,7 +141,7 @@ If you like using any of those, change =-1= to =1=.
 #+END_SRC
 
 * Minor conveniences
-** Showing lines and columns on the modeline
+** Showing lines and columns on the mode line
 #+BEGIN_SRC emacs-lisp
   (line-number-mode 1)
   (column-number-mode 1)
@@ -169,7 +172,7 @@ If you like using any of those, change =-1= to =1=.
       (beacon-mode 1))
 #+END_SRC
 
-** Show parens
+** Show parenthesis
 #+BEGIN_SRC emacs-lisp
   (show-paren-mode 1)
 #+END_SRC
@@ -342,7 +345,7 @@ If you like using any of those, change =-1= to =1=.
       (setq dashboard-banner-startup-message ""))
 #+END_SRC
 
-* Modeline
+* Mode line
 ** Clock
 *** Time format
 #+BEGIN_SRC emacs-lisp
@@ -411,7 +414,7 @@ This turns on the clock globally.
     (setq neo-window-width 35)) ;; Set the initial width of the neotree window
 #+END_SRC
 
-* Dire
+* Dired
 ** icons
 #+BEGIN_SRC emacs-lisp
   (use-package dired
@@ -421,6 +424,7 @@ This turns on the clock globally.
       :ensure t
       :config (treemacs-icons-dired-mode)))
 #+END_SRC
+
 ** hide details
 #+BEGIN_SRC emacs-lisp
   (add-hook 'dired-mode-hook #'dired-hide-details-mode)
