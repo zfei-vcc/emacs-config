@@ -39,7 +39,7 @@ If you like using any of those, change =-1= to =1=.
 
 *** Change the font
 #+BEGIN_SRC emacs-lisp
-  (when window-system
+  (when (and window-system (eq system-type 'darwin))
     (add-to-list 'default-frame-alist '(font . "JetBrains Mono-14")))
 #+END_SRC
 
