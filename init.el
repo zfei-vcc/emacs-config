@@ -13,6 +13,11 @@
 (unless package-archive-contents
   (package-refresh-contents))
 
+;;; Bootstrap use-package
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
 ;; Set the path to the config.org file
 (setq config-org-file (expand-file-name "config.org" "~/.emacs.d/emacs-config/"))
 
