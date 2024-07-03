@@ -6,11 +6,8 @@
 * Initial setup
 Clone the repository to =~.emacs.d/emacs-config= and put the following elisp code to =~./emacs.d/init.el=
 #+BEGIN_QUOTE
-;; Set the path to your emacs-config directory
-(add-to-list 'load-path "~/.emacs.d/emacs-config/")
-
-;; Load init.el file from emacs-config directory
-(load-file (expand-file-name "init.el" "~/.emacs.d/emacs-config/"))
+~(add-to-list 'load-path "~/.emacs.d/emacs-config/")~
+~(load-file (expand-file-name "init.el" "~/.emacs.d/emacs-config/"))~
 #+END_QUOTE
 
 * Theme
