@@ -135,7 +135,6 @@ Only enabled in programming mode.
   ;; Optional: Use flyspell-correct-ivy for better correction interface
   (use-package flyspell-correct-ivy
     :ensure t
-    :after flyspell-correct
     :config
     (setq flyspell-correct-interface 'flyspell-correct-ivy))
 #+END_SRC
@@ -233,6 +232,24 @@ Only enabled in programming mode.
     :ensure t
     :config
     (add-hook 'org-mode-hook (lambda () (org-bullets-mode))))
+#+END_SRC
+
+** Org download
+#+BEGIN_SRC emacs-lisp
+    (use-package org-download
+      :after org
+      :defer nil
+      :custom
+      (org-download-method 'directory)
+      (org-download-image-dir "images")
+      (org-download-heading-lvl nil)
+      (org-download-timestamp "%Y%m%d-%H%M%S_")
+      (org-image-actual-width 450)
+      (org-download-screenshot-method "/opt/homebrew/bin/pngpaste %s")
+      :bind
+      ("C-M-y" . org-download-screenshot)
+      :config
+      (require 'org-download))
 #+END_SRC
 
 * Buffers
