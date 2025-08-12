@@ -11,18 +11,31 @@ Clone the repository to =~.emacs.d/emacs-config= and put the following elisp cod
 ~(load-file (expand-file-name "init.el" "~/.emacs.d/emacs-config/"))~
 #+END_QUOTE
 
-* Theme
-[[eww:https://github.com/protesilaos/ef-themes][ef-themes]] are a collection of beautiful light and dark themes. =ef-trio-dark= and =ef-trio-light= (default) are my favorite and they can be toggled.  
-#+BEGIN_SRC emacs-lisp
-  (use-package ef-themes
+* Auto completion
+#+begin_src emacs-lisp
+  (use-package company
     :ensure t
-    :init
-    (load-theme 'ef-trio-light t)
+    :diminish
+    :hook (after-init . global-company-mode)
     :config
-    (setq ef-themes-to-toggle '(ef-trio-dark ef-trio-light))
-    (global-set-key (kbd "<f5>") 'ef-themes-toggle))
-#+END_SRC
+    ;; Performance and behavior
+    (setq company-idle-delay 0.2)                ; Small delay for better performance
+    (setq company-minimum-prefix-length 2)       ; Start after 2 characters
+    (setq company-selection-wrap-around t)       ; Wrap around completion list
+    (setq company-tooltip-align-annotations t)   ; Align type annotations
+    (setq company-require-match nil)             ; Allow typing non-matches
 
+    ;; Better completion display
+    (setq company-tooltip-limit 10)              ; Show max 10 candidates
+    (setq company-show-quick-access t)           ; Show numbers for quick access
+
+    ;; Key bindings
+    :bind (:map company-active-map
+           ("C-n" . company-select-next)
+           ("C-p" . company-select-previous)
+           ("C-d" . company-show-doc-buffer)
+           ("<tab>" . company-complete-selection)))
+#+end_src
 * Basic Interface Settings
 ** Looks
 *** Remove startup screen
@@ -34,14 +47,15 @@ Clone the repository to =~.emacs.d/emacs-config= and put the following elisp cod
 If you like using any of those, change =-1= to =1=.
 #+BEGIN_SRC emacs-lisp
   (tool-bar-mode -1)
-  (menu-bar-mode -1)
+  (menu-bar-mode 1)
   (when window-system (scroll-bar-mode))
 #+END_SRC
 
-*** Change the font 
+*** Change the font
+Download this fantastic font [[https://github.com/protesilaos/aporetic][here]].
 #+BEGIN_SRC emacs-lisp
   (when (and window-system (eq system-type 'darwin))
-    (add-to-list 'default-frame-alist '(font . "JetBrains Mono-14")))
+    (add-to-list 'default-frame-alist '(font . "Aporetic Sans Mono-18")))
 #+END_SRC
 
 *** Leave some margin on edge
@@ -62,7 +76,13 @@ Only enabled in programming mode.
 
 *** Display line number
 #+BEGIN_SRC emacs-lisp
-  (global-display-line-numbers-mode 1)
+  (global-display-line-numbers-mode -1)
+#+END_SRC
+
+*** Set fill column
+#+BEGIN_SRC  emacs-lisp
+  ;; Set the default fill column to 80
+  (setq-default fill-column 80)
 #+END_SRC
 
 ** Functionality
@@ -83,60 +103,159 @@ Only enabled in programming mode.
     (setq mac-right-option-modifier nil))
 #+END_SRC
 
-* Text manipulation
-** Improved kill-word
+* Buffer
+** Enhancing Isearch
+Prefix a counter showing the number of the current match out of all. Make
+regular Isearch interpret the empty space as a regular expression that matches
+any character between the words you give it.
 #+BEGIN_SRC emacs-lisp
-  (defun kill-whole-word ()
-    (interactive)
-    (backward-word)
-    (kill-word 1))
-  (global-set-key (kbd "C-c w w") 'kill-whole-word)
+  (setq isearch-lazy-count t)
+  (setq lazy-count-prefix-format "(%s/%s) ")
+  (setq lazy-count-suffix-format nil)
+  (setq search-whitespace-regexp ".*?")
 #+END_SRC
 
-** Copying the whole line
+** Vertico
+The =vertico= package applies a vertical layout to the minibuffer. It also pops
+up the minibuffer eagerly so we can see the available options without further
+interactions.
 #+BEGIN_SRC emacs-lisp
-  (defun copy-whole-line ()
-    (interactive)
-    (save-excursion
-      (kill-new
-       (buffer-substring
-	(point-at-bol)
-	(point-at-eol)))))
-  (global-set-key (kbd "C-c w l") 'copy-whole-line)
-#+END_SRC
-
-** Kill ring
-#+BEGIN_SRC emacs-lisp
-  (use-package popup-kill-ring
-    :ensure t
-    :bind ("M-y" . popup-kill-ring))
-#+END_SRC
-
-* Spell checking
-** Spelling check for English
-#+BEGIN_SRC emacs-lisp
-  (use-package flyspell
-    :ensure t
-    :diminish
-    :hook ((text-mode . flyspell-mode)
-           (prog-mode . flyspell-prog-mode))
-    :config
-    (setq ispell-program-name "aspell") ;; Use Aspell as the default spell checker
-    (setq ispell-extra-args '("--sug-mode=ultra" "--lang=en_US")))
-#+END_SRC
-
-** Correction
-#+BEGIN_SRC emacs-lisp
-  (use-package flyspell-correct
-    :ensure t
-    :bind (:map flyspell-mode-map
-                ("C-;" . flyspell-correct-wrapper)))
-
-  ;; Optional: Use flyspell-correct-ivy for better correction interface
-  (use-package flyspell-correct-ivy
+  (use-package vertico
     :ensure t
     :config
-    (setq flyspell-correct-interface 'flyspell-correct-ivy))
+    (setq vertico-cycle t)
+    (setq vertico-resize nil)
+    (vertico-mode 1)
+    (add-hook 'rfn-eshadow-update-overlay-hook #'vertico-directory-tidy))
+#+END_SRC
+
+** Marginalia
+The =marginalia= package provides helpful annotations next to completion
+candidates in the minibuffer.
+#+BEGIN_SRC emacs-lisp
+  (use-package marginalia
+    :ensure t
+    :config
+    (marginalia-mode 1))
+#+END_SRC
+
+** Orderless
+The =orderless= package lets the minibuffer use an out-of-order pattern matching
+algorithm. It matches space-separated words or regular expressions in any
+order.
+#+BEGIN_SRC emacs-lisp
+  (use-package orderless
+    :ensure t
+    :config
+    (setq completion-styles '(orderless basic)))
+#+END_SRC
+
+** Consult
+The =consult= package provides lots of commands that are enhanced variants of
+basic, built-in functionality. One of the headline features is its preview
+facility, where it shows in another Emacs window the context of what is
+currently matched in the minibuffer.
+#+BEGIN_SRC emacs-lisp
+  (use-package consult
+    :ensure t
+    :bind (;; A recursive grep
+           ("M-s M-g" . consult-grep)
+           ;; Search for files names recursively
+           ("M-s M-f" . consult-find)
+           ;; Search through the outline (headings) of the file
+           ("M-s M-o" . consult-outline)
+           ;; Search the current buffer
+           ("M-s M-l" . consult-line)
+           ;; Switch to another buffer, or bookmarked file, or recently
+           ;; opened file.
+           ("M-s M-b" . consult-buffer)))
+#+END_SRC
+
+** wgrep
+The =wgrep= packages lets us edit the results of a grep search while inside a
+`grep-mode' buffer. All we need is to toggle the editable mode, make the
+changes, and then type C-c C-c to confirm or C-c C-k to abort.
+#+BEGIN_SRC emacs-lisp
+  (use-package wgrep
+    :ensure t
+    :bind ( :map grep-mode-map
+            ("e" . wgrep-change-to-wgrep-mode)
+            ("C-x C-q" . wgrep-change-to-wgrep-mode)
+            ("C-c C-c" . wgrep-finish-edit)))
+#+END_SRC
+
+** Built-in mode
+The built-in `savehist-mode' saves minibuffer histories.  Vertico can then use
+that information to put recently selected options at the top.
+#+BEGIN_SRC emacs-lisp
+  (savehist-mode 1)
+#+END_SRC
+
+The built-in `recentf-mode' keeps track of recently visited files. You can then
+access those through the `consult-buffer' interface or with
+`recentf-open'/`recentf-open-files'.
+#+BEGIN_SRC emacs-lisp
+  (recentf-mode 1)
+#+END_SRC
+
+* Denote
+#+begin_src emacs-lisp
+  (use-package denote
+    :ensure t
+    :config
+    (setq denote-directory (expand-file-name "~/Documents/MyNotes/")
+          denote-known-keywords '("emacs" "personal" "scenario" "validation")
+          ;; defaults to org file type
+          denote-file-type nil)
+    :hook (dired-mode . denote-dired-mode))
+#+end_src
+
+* Dired
+#+BEGIN_SRC emacs-lisp
+(use-package treemacs
+  :if (display-graphic-p)
+  :ensure t
+  :bind ("<f8>" . treemacs))
+
+(use-package treemacs-icons-dired
+  :if (display-graphic-p)
+  :ensure t
+  :after treemacs
+  :config (treemacs-icons-dired-mode))
+
+(use-package dired
+  :hook ((dired-mode . dired-hide-details-mode)
+         (dired-mode . dired-omit-mode)))
+#+END_SRC
+
+* Latex
+#+BEGIN_SRC emacs-lisp
+  (use-package tex
+    :ensure auctex
+    :defer t
+    :hook ((LaTeX-mode . visual-line-mode)
+           (LaTeX-mode . LaTeX-math-mode)
+           (LaTeX-mode . turn-on-reftex)
+           (LaTeX-mode . flyspell-mode))
+    :config
+    (setq TeX-auto-save t)
+    (setq TeX-parse-self t)
+    (setq-default TeX-master nil)
+    ;; Use PDF mode by default
+    (setq TeX-PDF-mode t)
+    ;; Set default viewer for MacOS
+    (when (eq system-type 'darwin)
+      (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
+      (setq TeX-view-program-list '(("PDF Viewer" "/usr/bin/open -a Preview.app %o")))))
+#+END_SRC
+
+* Markdown
+#+BEGIN_SRC  emacs-lisp
+  (use-package markdown-mode
+    :ensure t
+    :mode ("\\.md\\'" . markdown-mode)
+    :init
+    (add-hook 'markdown-mode-hook #'flyspell-mode))
 #+END_SRC
 
 * Minor conveniences
@@ -185,6 +304,10 @@ Only enabled in programming mode.
                          (?\" . ?\")
                          ))
   (electric-pair-mode t)
+  ;; Disable < > pairing specifically
+  (setq electric-pair-inhibit-predicate
+        (lambda (c)
+          (eq c ?<)))
 #+END_SRC
 
 ** Rainbow delimiters
@@ -195,35 +318,86 @@ Only enabled in programming mode.
     :hook ((prog-mode . rainbow-delimiters-mode)))
 #+END_SRC
 
+* Modeline
+** deminish minor modes
+#+begin_src emacs-lisp
+  (use-package diminish
+  :ensure t
+  :config
+  ;; Hide org-mode related modes
+  (diminish 'org-indent-mode)
+  (diminish 'visual-line-mode)
+
+  ;; Hide other common minor modes
+  (with-eval-after-load 'flyspell
+    (diminish 'flyspell-mode))
+  (with-eval-after-load 'eldoc
+    (diminish 'eldoc-mode))
+  (with-eval-after-load 'abbrev
+    (diminish 'abbrev-mode))
+  (with-eval-after-load 'simple
+    (diminish 'auto-fill-function))
+  (with-eval-after-load 'emacs
+    (diminish 'auto-revert-mode))
+  (with-eval-after-load 'hl-line
+    (diminish 'hl-line-mode))
+  (with-eval-after-load 'simple
+    (diminish 'line-number-mode)
+    (diminish 'column-number-mode))
+  (with-eval-after-load 'reftex
+    (diminish 'reftex-mode))
+  (with-eval-after-load 'tex
+    (diminish 'LaTeX-math-mode))
+  (with-eval-after-load 'elec-pair
+    (diminish 'electric-pair-mode))
+  (with-eval-after-load 'paren
+    (diminish 'show-paren-mode))
+  (with-eval-after-load 'recentf
+    (diminish 'recentf-mode))
+  (with-eval-after-load 'savehist
+    (diminish 'savehist-mode)))
+#+end_src
+** Clock
+*** Time format
+#+BEGIN_SRC emacs-lisp
+  (setq display-time-24hr-format t)
+  (setq display-time-format "%H:%M - %d %B %Y ")
+  (setq display-time-default-load-average nil)
+#+END_SRC
+
+*** Enabling the mode
+This turns on the clock globally.
+#+BEGIN_SRC emacs-lisp
+  (display-time-mode 1)
+#+END_SRC
+
 * Org
 ** Basic org
 #+BEGIN_SRC emacs-lisp
   (use-package org
-    :ensure t
-    :hook ((org-mode . org-indent-mode)
-           (org-mode . visual-line-mode))
-    :config
-    (setq org-startup-indented t
-          org-indent-indentation-per-level 2
-          org-log-done 'time) ;; Adjust indentation level
-    (setq org-hide-emphasis-markers t)
-    ;; Custom templates
-    (setq org-structure-template-alist
-          '(("s" . "src")
-            ("e" . "example")
-            ("q" . "quote")
-            ("v" . "verse")
-            ("c" . "center")
-            ("l" . "latex")
-            ("h" . "html")
-            ("a" . "ascii")
-            ("i" . "index")
-            ("I" . "include")
-            ("el" . "src emacs-lisp")
-            ("py" . "src python")
-            ("sh" . "src shell")))
-    (setq org-latex-create-formula-image-program 'dvisvgm)
-    (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.45)))
+  :ensure t
+  :diminish org-indent-mode
+  :hook ((org-mode . org-indent-mode)
+         (org-mode . visual-line-mode))
+  :config
+  (setq org-startup-indented t
+        org-indent-indentation-per-level 2
+        org-log-done 'time
+        org-hide-emphasis-markers t)
+
+  (require 'org-tempo)
+
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  (add-to-list 'org-structure-template-alist '("py" . "src python"))
+  (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+
+  (setq org-latex-create-formula-image-program 'dvisvgm)
+  (setq org-format-latex-options (plist-put org-format-latex-options :scale 1.20)))
+
+  ;; Make title bigger
+  (add-hook 'org-mode-hook
+            (lambda ()
+              (set-face-attribute 'org-document-title nil :height 180)))
 #+END_SRC
 
 ** Org Bullets
@@ -244,244 +418,16 @@ Only enabled in programming mode.
       (org-download-image-dir "images")
       (org-download-heading-lvl nil)
       (org-download-timestamp "%Y%m%d-%H%M%S_")
-      (org-image-actual-width 450)
-      (org-download-screenshot-method "/opt/homebrew/bin/pngpaste %s")
+      (org-image-actual-width 480)
+      (org-download-screenshot-method "/usr/local/bin/pngpaste %s")
       :bind
       ("C-M-y" . org-download-screenshot)
       :config
       (require 'org-download))
 #+END_SRC
 
-* Buffers
-** Always kill the current buffer
-#+BEGIN_SRC emacs-lisp
-  (defun kill-curr-buffer ()
-    (interactive)
-    (kill-buffer (current-buffer)))
-  (global-set-key (kbd "C-x k") 'kill-curr-buffer)
-#+END_SRC
-
-** Enable ibuffer
-#+BEGIN_SRC emacs-lisp
-  (global-set-key (kbd "C-x C-b") 'ibuffer)
-#+END_SRC
-
-** Jump to word
-#+BEGIN_SRC emacs-lisp
-  (use-package avy
-    :ensure t
-    :bind
-    ("M-s" . avy-goto-char))
-#+END_SRC
-
-* Moving around
-** which-key
-#+BEGIN_SRC emacs-lisp
-  (use-package which-key
-    :ensure t
-    :diminish
-    :config
-      (which-key-mode))
-#+END_SRC
-
-** windows
-*** switch-widow
-#+BEGIN_SRC emacs-lisp
-(use-package switch-window
-  :ensure t
-  :config
-    (setq switch-window-input-style 'minibuffer)
-    (setq switch-window-increase 4)
-    (setq switch-window-threshold 2)
-    (setq switch-window-shortcut-style 'qwerty)
-    (setq switch-window-qwerty-shortcuts
-        '("a" "s" "d" "f" "j" "k" "l" "i" "o"))
-  :bind
-    ([remap other-window] . switch-window))
-#+END_SRC
-
-*** Following window splits
-#+BEGIN_SRC emacs-lisp
-  (defun split-and-follow-horizontally ()
-    (interactive)
-    (split-window-below)
-    (balance-windows)
-    (other-window 1))
-  (global-set-key (kbd "C-x 2") 'split-and-follow-horizontally)
-
-  (defun split-and-follow-vertically ()
-    (interactive)
-    (split-window-right)
-    (balance-windows)
-    (other-window 1))
-  (global-set-key (kbd "C-x 3") 'split-and-follow-vertically)
-#+END_SRC
-
-** ivy+counsel+swiper
-#+BEGIN_SRC emacs-lisp
-  (use-package ivy
-    :ensure t
-    :diminish ivy-mode
-    :init
-    (ivy-mode 1)
-    :config
-    (setq ivy-use-virtual-buffers t
-          ivy-count-format "(%d/%d) "
-          ivy-wrap t))
-
-  (use-package ivy-rich
-    :ensure t
-    :init
-    (ivy-rich-mode))
-
-  (use-package counsel
-    :ensure t
-    :bind (("M-x" . counsel-M-x)
-           ("C-x C-f" . counsel-find-file)
-           ("C-x b" . counsel-switch-buffer)
-           ("C-c k" . counsel-rg)
-           :map minibuffer-local-map
-           ("C-r" . counsel-minibuffer-history)))
-
-  (use-package swiper
-    :ensure t
-    :bind (("C-s" . swiper)
-           ("C-r" . swiper)))
-#+END_SRC
-
-* Dashboard
-#+BEGIN_SRC emacs-lisp
-  (use-package dashboard
-    :if (display-graphic-p)
-    :ensure t
-    :config
-      (dashboard-setup-startup-hook)
-      (setq dashboard-items '((recents  . 5)
-			      (projects . 5)))
-      (setq dashboard-banner-logo-title "Someday is today")
-      (setq dashboard-banner-startup-message ""))
-#+END_SRC
-
-* Mode line
-** Clock
-*** Time format
-#+BEGIN_SRC emacs-lisp
-  (setq display-time-24hr-format t)
-  (setq display-time-format "%H:%M - %d %B %Y")
-#+END_SRC
-
-*** Enabling the mode
-This turns on the clock globally.
-#+BEGIN_SRC emacs-lisp
-  (display-time-mode 1)
-#+END_SRC
-
-** diminish
-#+BEGIN_SRC emacs-lisp
-  (use-package diminish
-    :ensure t
-    :init
-    (diminish 'display-line-numbers-mode)
-    (diminish 'org-indent-mode)
-    (diminish 'visual-line-mode)
-    (diminish 'eldoc-mode))
-#+END_SRC
-
-** indicator
-#+BEGIN_SRC emacs-lisp
-  (use-package nyan-mode
-    :if (display-graphic-p)
-    :ensure t
-    :init
-    (nyan-mode))
-#+END_SRC
-
-* Auto completion
-** company
-#+BEGIN_SRC emacs-lisp
-  (use-package company
-    :ensure t
-    :diminish
-    :init
-    (add-hook 'after-init-hook 'global-company-mode)
-    :config
-    (setq company-idle-delay 0)
-    (setq company-minimum-prefix-length 1))
-#+END_SRC
-
-* File explorer
-** neotree
-#+BEGIN_SRC emacs-lisp
-  (use-package all-the-icons
-    :ensure t
-    :config
-    ;; Install fonts if necessary
-    (unless (member "all-the-icons" (font-family-list))
-      (all-the-icons-install-fonts t)))
-
-  ;; Use-package configuration for neotree
-  (use-package neotree
-    :ensure t
-    :bind ([f8] . neotree-toggle)
-    :config
-    ;; Enable icons in Neotree
-    (setq neo-theme (if (display-graphic-p) 'icons 'arrow)) ;; Use icons if in GUI mode
-    (setq neo-smart-open t) ;; Automatically find the current file and open the tree accordingly
-    (setq neo-window-fixed-size nil) ;; Make the neotree window resizable
-    (setq neo-window-width 35)) ;; Set the initial width of the neotree window
-#+END_SRC
-
-* Dired
-** icons
-#+BEGIN_SRC emacs-lisp
-  (use-package dired
-    :config
-    (use-package treemacs-icons-dired
-      :if (display-graphic-p)
-      :ensure t
-      :config (treemacs-icons-dired-mode)))
-#+END_SRC
-
-** hide details
-#+BEGIN_SRC emacs-lisp
-  (add-hook 'dired-mode-hook #'dired-hide-details-mode)
-  (add-hook 'dired-mode-hook 'dired-omit-mode)
-#+END_SRC
-
-* Denote
-#+begin_src emacs-lisp
-  (use-package denote
-    :ensure t
-    :config
-    (setq denote-directory (expand-file-name "~/Documents/MyNotes/")
-          denote-known-keywords '("emacs" "personal" "scenario" "validation")
-          ;; defaults to org file type
-          denote-file-type nil)
-    :hook (dired-mode . denote-dired-mode))
-#+end_src
-
-* Latex
-#+BEGIN_SRC emacs-lisp
-  (use-package tex
-    :ensure auctex
-    :defer t
-    :hook ((LaTeX-mode . visual-line-mode)
-           (LaTeX-mode . LaTeX-math-mode)
-           (LaTeX-mode . turn-on-reftex)
-           (LaTeX-mode . flyspell-mode))
-    :config
-    (setq TeX-auto-save t)
-    (setq TeX-parse-self t)
-    (setq-default TeX-master nil)
-    ;; Use PDF mode by default
-    (setq TeX-PDF-mode t)
-    ;; Set default viewer for MacOS
-    (when (eq system-type 'darwin)
-      (setq TeX-view-program-selection '((output-pdf "PDF Viewer")))
-      (setq TeX-view-program-list '(("PDF Viewer" "/usr/bin/open -a Preview.app %o")))))
-#+END_SRC
-
 * Python development
+Adding =COMMENT= to the heading prevents the emacs-lisp from execution
 ** Virtual environment
 #+BEGIN_SRC emacs-lisp
   (use-package pyvenv
@@ -522,3 +468,146 @@ This turns on the clock globally.
     (set-face-foreground 'highlight-indent-guides-character-face "dimgray")
     (setq highlight-indent-guides-method 'character))
 #+END_SRC
+
+* Spell checking
+Program =aspell= should be installed.
+** Spelling check for English and Swedish
+#+BEGIN_SRC emacs-lisp
+  (use-package flyspell
+    :ensure t
+    :diminish
+    :hook ((text-mode . flyspell-mode)
+           (markdown-mode . flyspell-mode)
+           (prog-mode . flyspell-prog-mode))
+    :config
+    (setq ispell-program-name "aspell")
+    ;; Remove language specification from default args
+    (setq ispell-extra-args '("--sug-mode=ultra"))
+
+    ;; Create a dictionary list with both languages
+    (setq ispell-dictionary "en_US")  ;; Default dictionary
+
+    ;; Create a function to toggle between dictionaries
+    (defun fd-switch-dictionary ()
+      (interactive)
+      (let* ((dic ispell-current-dictionary)
+             (change (if (string= dic "en_US") "sv" "en_US")))
+        (ispell-change-dictionary change)
+        (message "Dictionary switched from %s to %s" dic change)))
+
+    ;; Bind the dictionary toggling function to a key
+    (global-set-key (kbd "C-c d") 'fd-switch-dictionary))
+#+END_SRC
+
+** Correction
+#+BEGIN_SRC emacs-lisp
+  (use-package flyspell-correct
+    :ensure t
+    :bind (:map flyspell-mode-map
+                ("C-;" . flyspell-correct-wrapper)))
+
+  ;; Optional: Use flyspell-correct-ivy for better correction interface
+  (use-package flyspell-correct-ivy
+    :ensure t
+    :config
+    (setq flyspell-correct-interface 'flyspell-correct-ivy))
+#+END_SRC
+
+** Function to ignore words
+#+BEGIN_SRC emacs-lisp
+  (defun flyspell-ignore-word ()
+    "Add the word at point to the flyspell exclusion dictionary."
+    (interactive)
+    (let ((current-word (thing-at-point 'word)))
+      (when current-word
+        (ispell-send-string (concat "@" current-word "\n"))
+        (setq ispell-pdict-modified-p '(t))
+        (ispell-pdict-save)
+        (message "Word '%s' will be ignored" current-word))))
+
+  (global-set-key (kbd "C-c i") 'flyspell-ignore-word)
+#+END_SRC
+
+* Text manipulation
+** Improved kill-word
+#+BEGIN_SRC emacs-lisp
+  (defun kill-whole-word ()
+    (interactive)
+    (backward-word)
+    (kill-word 1))
+  (global-set-key (kbd "C-c w w") 'kill-whole-word)
+#+END_SRC
+
+** Copying the whole line
+#+BEGIN_SRC emacs-lisp
+  (defun copy-whole-line ()
+    (interactive)
+    (save-excursion
+      (kill-new
+       (buffer-substring
+	(point-at-bol)
+	(point-at-eol)))))
+  (global-set-key (kbd "C-c w l") 'copy-whole-line)
+#+END_SRC
+
+** Kill ring
+#+BEGIN_SRC emacs-lisp
+  (use-package popup-kill-ring
+    :ensure t
+    :bind ("M-y" . popup-kill-ring))
+#+END_SRC
+
+* Theme
+[[eww:https://github.com/protesilaos/ef-themes][ef-themes]] are a collection of beautiful light and dark themes. =ef-trio-dark=
+and =ef-trio-light= (default) are my favorite and they can be toggled.
+#+BEGIN_SRC emacs-lisp
+  (use-package ef-themes
+    :ensure t
+    :init
+    (load-theme 'ef-summer t)
+    :config
+    (setq ef-themes-to-toggle '(ef-summer ef-trio-light))
+    (global-set-key (kbd "<f5>") 'ef-themes-toggle))
+#+END_SRC
+
+* Windows
+*** switch-widow
+#+BEGIN_SRC emacs-lisp
+(use-package switch-window
+  :ensure t
+  :config
+    (setq switch-window-input-style 'minibuffer)
+    (setq switch-window-increase 4)
+    (setq switch-window-threshold 2)
+    (setq switch-window-shortcut-style 'qwerty)
+    (setq switch-window-qwerty-shortcuts
+        '("a" "s" "d" "f" "j" "k" "l" "i" "o"))
+  :bind
+    ([remap other-window] . switch-window))
+#+END_SRC
+
+*** Following window splits
+#+BEGIN_SRC emacs-lisp
+  (defun split-and-follow-horizontally ()
+    (interactive)
+    (split-window-below)
+    (balance-windows)
+    (other-window 1))
+  (global-set-key (kbd "C-x 2") 'split-and-follow-horizontally)
+
+  (defun split-and-follow-vertically ()
+    (interactive)
+    (split-window-right)
+    (balance-windows)
+    (other-window 1))
+  (global-set-key (kbd "C-x 3") 'split-and-follow-vertically)
+#+END_SRC
+
+* Zsh
+I use zsh (oh-my-zsh) as my default shell.
+#+BEGIN_SRC emacs-lisp
+  (use-package vterm
+    :ensure t
+    :bind ("<f9>" . vterm))
+#+END_SRC
+
